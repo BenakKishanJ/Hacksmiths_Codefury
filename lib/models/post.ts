@@ -3,6 +3,9 @@ import { Database } from "./database";
 import { Post, Comment } from "./types";
 
 export class PostModel {
+  deletePost(arg0: ObjectId) {
+      throw new Error("Method not implemented.");
+  }
   private collection: Collection<Post>;
 
   constructor(collection: Collection<Post>) {

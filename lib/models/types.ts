@@ -1,10 +1,19 @@
 import { ObjectId } from "mongodb";
 
+export function isComment(comment: Comment | null): comment is Comment {
+  return (
+    comment !== null &&
+    "userId" in comment &&
+    "text" in comment &&
+    "createdAt" in comment
+  );
+}
+export type UserRole = "artist" | "student" | "admin";
 // Users Collection
 export interface User {
   _id?: ObjectId;
   clerkId: string; // Clerk auth ID
-  role: "artist" | "student" | "admin";
+  role: UserRole;
   name: string;
   email: string;
   bio?: string;
@@ -37,7 +46,7 @@ export interface Artwork {
   price: number;
   forSale: boolean;
   isAuction: boolean;
-  auctionId?: ObjectId; // ref -> Auctions if applicable
+  auctionId?: ObjectId | null; // ref -> Auctions if applicable
   createdAt: Date;
   updatedAt: Date;
 }

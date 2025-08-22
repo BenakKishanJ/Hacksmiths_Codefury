@@ -1,8 +1,11 @@
-import { Collection, ObjectId } from 'mongodb';
-import { Database } from './database';
-import { Auction, Bid } from './types';
+import { Collection, ObjectId } from "mongodb";
+import { Database } from "./database";
+import { Auction, Bid } from "./types";
 
 export class AuctionModel {
+  deleteAuction(auctionId: ObjectId) {
+    throw new Error("Method not implemented.");
+  }
   private collection: Collection<Auction>;
 
   constructor(collection: Collection<Auction>) {
@@ -10,13 +13,15 @@ export class AuctionModel {
   }
 
   // Create a new auction
-  async createAuction(auctionData: Omit<Auction, '_id' | 'bids' | 'status' | 'createdAt'>): Promise<Auction> {
+  async createAuction(
+    auctionData: Omit<Auction, "_id" | "bids" | "status" | "createdAt">,
+  ): Promise<Auction> {
     const now = new Date();
     const newAuction: Auction = {
       ...auctionData,
       bids: [],
-      status: 'ongoing',
-      createdAt: now
+      status: "ongoing",
+      createdAt: now,
     };
 
     const result = await this.collection.insertOne(newAuction);
@@ -25,19 +30,30 @@ export class AuctionModel {
 
   // Get auction by ID
   async getAuctionById(id: string | ObjectId): Promise<Auction | null> {
-    const _id = typeof id === 'string' ? new ObjectId(id) : id;
+    const _id = typeof id === "string" ? new ObjectId(id) : id;
     return this.collection.findOne({ _id });
   }
 
   // Get auction by artwork ID
-  async getAuctionByArtwork(artworkId: string | ObjectId): Promise<Auction | null> {
-    const _artworkId = typeof artworkId === 'string' ? new ObjectId(artworkId) : artworkId;
-    return this.collection.findOne({ artworkId: _artworkId, status: 'ongoing' });
+  async getAuctionByArtwork(
+    artworkId: string | ObjectId,
+  ): Promise<Auction | null> {
+    const _artworkId =
+      typeof artworkId === "string" ? new ObjectId(artworkId) : artworkId;
+    return this.collection.findOne({
+      artworkId: _artworkId,
+      status: "ongoing",
+    });
   }
 
   // Get auctions by artist
-  async getAuctionsByArtist(artistId: string | ObjectId, limit = 20, skip = 0): Promise<Auction[]> {
-    const _artistId = typeof artistId === 'string' ? new ObjectId(artistId) : artistId;
+  async getAuctionsByArtist(
+    artistId: string | ObjectId,
+    limit = 20,
+    skip = 0,
+  ): Promise<Auction[]> {
+    const _artistId =
+      typeof artistId === "string" ? new ObjectId(artistId) : artistId;
     return this.collection
       .find({ artistId: _artistId })
       .sort({ endTime: 1 }) // Ending soonest first
@@ -51,8 +67,8 @@ export class AuctionModel {
     const now = new Date();
     return this.collection
       .find({
-        status: 'ongoing',
-        endTime: { $gt: now }
+        status: "ongoing",
+        endTime: { $gt: now },
       })
       .sort({ endTime: 1 }) // Ending soonest first
       .skip(skip)
@@ -63,7 +79,7 @@ export class AuctionModel {
   // Get all ended auctions
   async getEndedAuctions(limit = 20, skip = 0): Promise<Auction[]> {
     return this.collection
-      .find({ status: 'completed' })
+      .find({ status: "completed" })
       .sort({ endTime: -1 }) // Most recently ended first
       .skip(skip)
       .limit(limit)
@@ -71,8 +87,12 @@ export class AuctionModel {
   }
 
   // Place a bid
-  async placeBid(auctionId: string | ObjectId, bidData: Omit<Bid, 'time'>): Promise<boolean> {
-    const _auctionId = typeof auctionId === 'string' ? new ObjectId(auctionId) : auctionId;
+  async placeBid(
+    auctionId: string | ObjectId,
+    bidData: Omit<Bid, "time">,
+  ): Promise<boolean> {
+    const _auctionId =
+      typeof auctionId === "string" ? new ObjectId(auctionId) : auctionId;
     const now = new Date();
 
     // Get the current auction
@@ -80,7 +100,7 @@ export class AuctionModel {
     if (!auction) return false;
 
     // Check if auction is still ongoing
-    if (auction.status !== 'ongoing' || now > auction.endTime) {
+    if (auction.status !== "ongoing" || now > auction.endTime) {
       return false;
     }
 
@@ -92,7 +112,7 @@ export class AuctionModel {
     // Create the new bid
     const newBid: Bid = {
       ...bidData,
-      time: now
+      time: now,
     };
 
     // Update the auction
@@ -102,9 +122,9 @@ export class AuctionModel {
         $push: { bids: newBid },
         $set: {
           currentBid: bidData.amount,
-          currentBidder: bidData.userId
-        }
-      }
+          currentBidder: bidData.userId,
+        },
+      },
     );
 
     return result.modifiedCount > 0;
@@ -112,11 +132,12 @@ export class AuctionModel {
 
   // End auction
   async endAuction(auctionId: string | ObjectId): Promise<boolean> {
-    const _auctionId = typeof auctionId === 'string' ? new ObjectId(auctionId) : auctionId;
+    const _auctionId =
+      typeof auctionId === "string" ? new ObjectId(auctionId) : auctionId;
 
     const result = await this.collection.updateOne(
       { _id: _auctionId },
-      { $set: { status: 'completed' } }
+      { $set: { status: "completed" } },
     );
 
     return result.modifiedCount > 0;
@@ -128,27 +149,32 @@ export class AuctionModel {
 
     const result = await this.collection.updateMany(
       {
-        status: 'ongoing',
-        endTime: { $lte: now }
+        status: "ongoing",
+        endTime: { $lte: now },
       },
-      { $set: { status: 'completed' } }
+      { $set: { status: "completed" } },
     );
 
     return result.modifiedCount;
   }
 
   // Get auctions ending soon
-  async getAuctionsEndingSoon(hoursThreshold = 24, limit = 10): Promise<Auction[]> {
+  async getAuctionsEndingSoon(
+    hoursThreshold = 24,
+    limit = 10,
+  ): Promise<Auction[]> {
     const now = new Date();
-    const thresholdDate = new Date(now.getTime() + hoursThreshold * 60 * 60 * 1000);
+    const thresholdDate = new Date(
+      now.getTime() + hoursThreshold * 60 * 60 * 1000,
+    );
 
     return this.collection
       .find({
-        status: 'ongoing',
+        status: "ongoing",
         endTime: {
           $gt: now,
-          $lte: thresholdDate
-        }
+          $lte: thresholdDate,
+        },
       })
       .sort({ endTime: 1 })
       .limit(limit)
@@ -157,7 +183,8 @@ export class AuctionModel {
 
   // Get auction count by artist
   async getAuctionCountByArtist(artistId: string | ObjectId): Promise<number> {
-    const _artistId = typeof artistId === 'string' ? new ObjectId(artistId) : artistId;
+    const _artistId =
+      typeof artistId === "string" ? new ObjectId(artistId) : artistId;
     return this.collection.countDocuments({ artistId: _artistId });
   }
 
