@@ -8,7 +8,6 @@ import {
   BookOpen,
   GraduationCap,
   Gavel,
-  Bell,
   Settings,
   LogOut,
 } from "lucide-react";
