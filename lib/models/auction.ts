@@ -3,9 +3,11 @@ import { Database } from "./database";
 import { Auction, Bid } from "./types";
 
 export class AuctionModel {
-  deleteAuction(auctionId: ObjectId) {
-    throw new Error("Method not implemented.");
+  async deleteAuction(auctionId: ObjectId): Promise<boolean> {
+    const result = await this.collection.deleteOne({ _id: auctionId });
+    return result.deletedCount > 0;
   }
+
   private collection: Collection<Auction>;
 
   constructor(collection: Collection<Auction>) {
