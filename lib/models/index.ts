@@ -1,15 +1,15 @@
 // Export all database models
-import { Database, getDatabase } from './database';
-import { UserModel } from './user';
-import { ArtformModel } from './artform';
-import { ArtworkModel } from './artwork';
-import { PostModel } from './post';
-import { AuctionModel } from './auction';
-import { CourseModel } from './course';
-import { CollegeModel } from './college';
+import { Database, getDatabase } from "./database";
+import { UserModel } from "./user";
+import { ArtformModel } from "./artform";
+import { ArtworkModel } from "./artwork";
+import { PostModel } from "./post";
+import { AuctionModel } from "./auction";
+import { CourseModel } from "./course";
+import { CollegeModel } from "./college";
 
 // Export types
-export * from './types';
+export * from "./types";
 
 // Export database classes
 export {
@@ -21,7 +21,7 @@ export {
   PostModel,
   AuctionModel,
   CourseModel,
-  CollegeModel
+  CollegeModel,
 };
 
 // Helper function to get all model instances
@@ -33,12 +33,12 @@ export async function getModels() {
     post: await PostModel.getInstance(),
     auction: await AuctionModel.getInstance(),
     course: await CourseModel.getInstance(),
-    college: await CollegeModel.getInstance()
+    college: await CollegeModel.getInstance(),
   };
 }
 
 // Default export of all models
-export default {
+const Models = {
   Database,
   getDatabase,
   UserModel,
@@ -48,5 +48,6 @@ export default {
   AuctionModel,
   CourseModel,
   CollegeModel,
-  getModels
+  getModels,
 };
+export default Models;
