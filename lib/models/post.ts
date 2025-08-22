@@ -3,8 +3,9 @@ import { Database } from "./database";
 import { Post, Comment } from "./types";
 
 export class PostModel {
-  deletePost(arg0: ObjectId) {
-      throw new Error("Method not implemented.");
+  async deletePost(postId: ObjectId): Promise<boolean> {
+    const result = await this.collection.deleteOne({ _id: postId });
+    return result.deletedCount > 0;
   }
   private collection: Collection<Post>;
 
