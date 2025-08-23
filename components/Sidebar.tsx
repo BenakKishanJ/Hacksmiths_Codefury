@@ -9,12 +9,12 @@ import {
   GraduationCap,
   Gavel,
   Settings,
-  LogOut,
+  // LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import Image from "next/image";
-import { useUser, useClerk } from "@clerk/nextjs";
+// import Image from "next/image";
+import { useUser, useClerk, UserButton } from "@clerk/nextjs";
 
 export function AppSidebar() {
   const routes = [
@@ -71,11 +71,6 @@ export function AppSidebar() {
 
   const [open, setOpen] = useState(false);
   const { user } = useUser();
-  const { signOut } = useClerk();
-
-  const handleSignOut = () => {
-    signOut();
-  };
 
   return (
     <Sidebar open={open} setOpen={setOpen}>
@@ -89,42 +84,42 @@ export function AppSidebar() {
           </div>
         </div>
         <div className="space-y-2">
-          <SidebarLink
-            link={{
-              label: user ? user.fullName || "User Profile" : "Sign In",
-              href: "/profile",
-              icon:
-                user && user.imageUrl ? (
-                  <Image
-                    src={user.imageUrl}
-                    className="h-7 w-7 flex-shrink-0 rounded-full"
-                    width={50}
-                    height={50}
-                    alt="User Avatar"
-                  />
-                ) : (
+          {user ? (
+            <div className="flex items-center gap-2 px-2 py-2">
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "h-7 w-7",
+                    userButtonPopoverCard: "shadow-lg",
+                  },
+                }}
+                showName={open}
+                userProfileMode="navigation"
+                userProfileUrl="/profile"
+              />
+              {open && (
+                <motion.span
+                  animate={{
+                    opacity: open ? 1 : 0,
+                  }}
+                  className="text-neutral-700 dark:text-neutral-200 text-sm whitespace-pre"
+                >
+                  {user.fullName || "User Profile"}
+                </motion.span>
+              )}
+            </div>
+          ) : (
+            <SidebarLink
+              link={{
+                label: "Sign In",
+                href: "/sign-in",
+                icon: (
                   <div className="h-7 w-7 bg-neutral-300 dark:bg-neutral-600 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4 text-neutral-700 dark:text-neutral-200" />
                   </div>
                 ),
-            }}
-          />
-          {user && (
-            <div
-              className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors"
-              onClick={handleSignOut}
-            >
-              <LogOut className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-              <motion.span
-                animate={{
-                  display: open ? "inline-block" : "none",
-                  opacity: open ? 1 : 0,
-                }}
-                className="text-neutral-700 dark:text-neutral-200 text-sm whitespace-pre"
-              >
-                Sign Out
-              </motion.span>
-            </div>
+              }}
+            />
           )}
         </div>
       </SidebarBody>
