@@ -6,10 +6,10 @@ import { ObjectId } from "mongodb";
 // GET /api/artwork/[id] - Get single artwork by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const id = params.id;
+    const { id } = await params; // Await params here
 
     // Create models instance
     const models = await getModels();
@@ -46,19 +46,19 @@ export async function GET(
       },
       artist: artist
         ? {
-            id: artist._id?.toString(),
-            name: artist.name,
-            bio: artist.bio,
-            profilePic: artist.profilePic || null,
-          }
+          id: artist._id?.toString(),
+          name: artist.name,
+          bio: artist.bio,
+          profilePic: artist.profilePic || null,
+        }
         : null,
       artform: artform
         ? {
-            id: artform._id?.toString(),
-            name: artform.name,
-            state: artform.state,
-            history: artform.history,
-          }
+          id: artform._id?.toString(),
+          name: artform.name,
+          state: artform.state,
+          history: artform.history,
+        }
         : null,
       timeline: posts.map((post) => ({
         ...post,
@@ -76,18 +76,18 @@ export async function GET(
       })),
       auction: auction
         ? {
-            id: auction._id?.toString(),
-            startPrice: auction.startPrice,
-            currentBid: auction.currentBid,
-            currentBidder: auction.currentBidder?.toString(),
-            startTime: auction.startTime,
-            endTime: auction.endTime,
-            status: auction.status,
-            bids: auction.bids.map((bid) => ({
-              ...bid,
-              userId: bid.userId.toString(),
-            })),
-          }
+          id: auction._id?.toString(),
+          startPrice: auction.startPrice,
+          currentBid: auction.currentBid,
+          currentBidder: auction.currentBidder?.toString(),
+          startTime: auction.startTime,
+          endTime: auction.endTime,
+          status: auction.status,
+          bids: auction.bids.map((bid) => ({
+            ...bid,
+            userId: bid.userId.toString(),
+          })),
+        }
         : null,
     });
   } catch (error: unknown) {
