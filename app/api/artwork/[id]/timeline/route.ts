@@ -6,10 +6,10 @@ import { ObjectId } from "mongodb";
 // GET /api/artwork/[id]/timeline - Get all posts for an artwork (timeline)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const artworkId = params.id;
+    const { id: artworkId } = await params; // Await params here
 
     // Create models instance
     const models = await getModels();
@@ -51,10 +51,10 @@ export async function GET(
       },
       artist: artist
         ? {
-            _id: artist._id?.toString(),
-            name: artist.name,
-            profilePic: artist.profilePic,
-          }
+          _id: artist._id?.toString(),
+          name: artist.name,
+          profilePic: artist.profilePic,
+        }
         : null,
     });
   } catch (error: unknown) {
@@ -70,7 +70,7 @@ export async function GET(
 // POST /api/artwork/[id]/timeline - Add a new post to the artwork timeline
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Check authentication
@@ -79,7 +79,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const artworkId = params.id;
+    const { id: artworkId } = await params; // Await params here
 
     // Parse request body
     const body = await request.json();
