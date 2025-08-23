@@ -103,7 +103,7 @@ export async function GET(
 // PATCH /api/artwork/[id] - Update artwork
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Check authentication
@@ -112,7 +112,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const id = params.id;
+    const { id } = await params; // Await params here
 
     // Parse request body
     const body = await request.json();
@@ -207,7 +207,7 @@ export async function PATCH(
 // DELETE /api/artwork/[id] - Delete artwork
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Check authentication
@@ -216,7 +216,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const id = params.id;
+    const { id } = await params; // Await params here
 
     // Create models instance
     const models = await getModels();
