@@ -1,6 +1,6 @@
-import { Collection, ObjectId } from 'mongodb';
-import { Database } from './database';
-import { Artform } from './types';
+import { Collection, ObjectId } from "mongodb";
+import { Database } from "./database";
+import { Artform } from "./types";
 
 export class ArtformModel {
   private collection: Collection<Artform>;
@@ -10,13 +10,15 @@ export class ArtformModel {
   }
 
   // Create a new artform
-  async createArtform(artformData: Omit<Artform, '_id' | 'createdAt' | 'updatedAt' | 'artists'>): Promise<Artform> {
+  async createArtform(
+    artformData: Omit<Artform, "_id" | "createdAt" | "updatedAt" | "artists">,
+  ): Promise<Artform> {
     const now = new Date();
     const newArtform: Artform = {
       ...artformData,
       artists: [],
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
 
     const result = await this.collection.insertOne(newArtform);
@@ -25,7 +27,7 @@ export class ArtformModel {
 
   // Get artform by ID
   async getArtformById(id: string | ObjectId): Promise<Artform | null> {
-    const _id = typeof id === 'string' ? new ObjectId(id) : id;
+    const _id = typeof id === "string" ? new ObjectId(id) : id;
     return this.collection.findOne({ _id });
   }
 
@@ -45,7 +47,11 @@ export class ArtformModel {
   }
 
   // Get artforms by state
-  async getArtformsByState(state: string, limit = 20, skip = 0): Promise<Artform[]> {
+  async getArtformsByState(
+    state: string,
+    limit = 20,
+    skip = 0,
+  ): Promise<Artform[]> {
     return this.collection
       .find({ state })
       .sort({ name: 1 })
@@ -55,46 +61,66 @@ export class ArtformModel {
   }
 
   // Update artform
-  async updateArtform(id: string | ObjectId, updateData: Partial<Artform>): Promise<boolean> {
-    const _id = typeof id === 'string' ? new ObjectId(id) : id;
+  async updateArtform(
+    id: string | ObjectId,
+    updateData: Partial<Artform>,
+  ): Promise<boolean> {
+    const _id = typeof id === "string" ? new ObjectId(id) : id;
     const result = await this.collection.updateOne(
       { _id },
       {
         $set: {
           ...updateData,
-          updatedAt: new Date()
-        }
-      }
+          updatedAt: new Date(),
+        },
+      },
     );
     return result.modifiedCount > 0;
   }
 
+  // Delete artform
+  async deleteArtform(id: string | ObjectId): Promise<boolean> {
+    const _id = typeof id === "string" ? new ObjectId(id) : id;
+    const result = await this.collection.deleteOne({ _id });
+    return result.deletedCount > 0;
+  }
+
   // Add artist to artform
-  async addArtistToArtform(artformId: string | ObjectId, artistId: string | ObjectId): Promise<boolean> {
-    const _artformId = typeof artformId === 'string' ? new ObjectId(artformId) : artformId;
-    const _artistId = typeof artistId === 'string' ? new ObjectId(artistId) : artistId;
+  async addArtistToArtform(
+    artformId: string | ObjectId,
+    artistId: string | ObjectId,
+  ): Promise<boolean> {
+    const _artformId =
+      typeof artformId === "string" ? new ObjectId(artformId) : artformId;
+    const _artistId =
+      typeof artistId === "string" ? new ObjectId(artistId) : artistId;
 
     const result = await this.collection.updateOne(
       { _id: _artformId },
       {
         $addToSet: { artists: _artistId },
-        $set: { updatedAt: new Date() }
-      }
+        $set: { updatedAt: new Date() },
+      },
     );
     return result.modifiedCount > 0;
   }
 
   // Remove artist from artform
-  async removeArtistFromArtform(artformId: string | ObjectId, artistId: string | ObjectId): Promise<boolean> {
-    const _artformId = typeof artformId === 'string' ? new ObjectId(artformId) : artformId;
-    const _artistId = typeof artistId === 'string' ? new ObjectId(artistId) : artistId;
+  async removeArtistFromArtform(
+    artformId: string | ObjectId,
+    artistId: string | ObjectId,
+  ): Promise<boolean> {
+    const _artformId =
+      typeof artformId === "string" ? new ObjectId(artformId) : artformId;
+    const _artistId =
+      typeof artistId === "string" ? new ObjectId(artistId) : artistId;
 
     const result = await this.collection.updateOne(
       { _id: _artformId },
       {
         $pull: { artists: _artistId },
-        $set: { updatedAt: new Date() }
-      }
+        $set: { updatedAt: new Date() },
+      },
     );
     return result.modifiedCount > 0;
   }

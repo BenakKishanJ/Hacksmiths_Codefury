@@ -1,3 +1,4 @@
+// app/api/artform/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getModels } from "@/lib/models";
@@ -132,74 +133,6 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to create artform", message },
-      { status: 500 },
-    );
-  }
-}
-
-// GET /api/artform/[id] - Get single artform by ID
-export async function GET_byId(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
-  try {
-    const id = params.id;
-
-    // Create models instance
-    const models = await getModels();
-
-    // Get artform
-    const artform = await models.artform.getArtformById(id);
-    if (!artform) {
-      return NextResponse.json({ error: "Artform not found" }, { status: 404 });
-    }
-
-    // Get all artists for this artform
-    const artistObjects = await Promise.all(
-      artform.artists.map(async (artistId) => {
-        const artist = await models.user.getUserById(artistId);
-        return artist
-          ? {
-              _id: artist._id?.toString(),
-              name: artist.name,
-              profilePic: artist.profilePic || null,
-              state: artist.state || null,
-            }
-          : null;
-      }),
-    );
-
-    // Filter out null values (artists that don't exist anymore)
-    const artists = artistObjects.filter((artist) => artist !== null);
-
-    // Get artworks for this artform
-    const artworks = await models.artwork.getArtworksByArtform(id, 10, 0);
-
-    // Transform artworks for response
-    const transformedArtworks = artworks.map((artwork) => ({
-      _id: artwork._id?.toString(),
-      title: artwork.title,
-      artistId: artwork.artistId.toString(),
-      finalImageUrl: artwork.finalImageUrl,
-      price: artwork.price,
-      forSale: artwork.forSale,
-      isAuction: artwork.isAuction,
-    }));
-
-    return NextResponse.json({
-      artform: {
-        ...artform,
-        _id: artform._id?.toString(),
-        artists: artform.artists.map((id) => id.toString()),
-      },
-      artists,
-      artworks: transformedArtworks,
-    });
-  } catch (error: unknown) {
-    console.error("Error fetching artform:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json(
-      { error: "Failed to fetch artform", message },
       { status: 500 },
     );
   }
