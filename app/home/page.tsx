@@ -5,12 +5,41 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
-import { Post, User, Artwork, Artform } from "@/lib/models/types";
-import { PostModel, UserModel, ArtworkModel, ArtformModel } from "@/lib/models";
-import { ObjectId } from "mongodb";
+// import { ObjectId } from "mongodb";
+
+// Define types for the API responses
+interface Comment {
+  userId: string;
+  text: string;
+  createdAt: string;
+}
+
+interface Post {
+  _id: string;
+  artworkId: string;
+  artistId: string;
+  mediaType: "image" | "video";
+  mediaUrl: string;
+  caption: string;
+  likes: string[];
+  comments: Comment[];
+  createdAt: string;
+  artist?: {
+    id: string;
+    name: string;
+    profilePic?: string;
+  };
+  artwork?: {
+    id: string;
+    title: string;
+    forSale?: boolean;
+    isAuction?: boolean;
+  };
+  totalPostsInTimeline?: number;
+}
 
 export default function HomePage() {
-  const { user: currentUser } = useUser();
+  const { user: currentUser, isLoaded } = useUser();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,40 +48,14 @@ export default function HomePage() {
     async function fetchPosts() {
       try {
         setLoading(true);
-        const postModel = await PostModel.getInstance();
-        const userModel = await UserModel.getInstance();
-        const artworkModel = await ArtworkModel.getInstance();
-        const artformModel = await ArtformModel.getInstance();
+        const response = await fetch("/api/feed?limit=20");
 
-        // Get feed posts
-        const feedPosts = await postModel.getFeedPosts(20, 0);
+        if (!response.ok) {
+          throw new Error("Failed to fetch posts");
+        }
 
-        // Enrich posts with additional data
-        const enrichedPosts = await Promise.all(
-          feedPosts.map(async (post) => {
-            try {
-              const [artist, artwork, artform] = await Promise.all([
-                userModel.getUserById(post.artistId),
-                artworkModel.getArtworkById(post.artworkId),
-                artwork
-                  ? artformModel.getArtformById(artwork.artformId)
-                  : Promise.resolve(null),
-              ]);
-
-              return {
-                ...post,
-                artist,
-                artwork,
-                artform,
-              };
-            } catch (err) {
-              console.error("Error enriching post:", err);
-              return post;
-            }
-          }),
-        );
-
-        setPosts(enrichedPosts);
+        const data = await response.json();
+        setPosts(data.posts || []);
       } catch (err) {
         console.error("Error fetching posts:", err);
         setError("Failed to load posts");
@@ -64,32 +67,32 @@ export default function HomePage() {
     fetchPosts();
   }, []);
 
-  const handleLike = async (postId: ObjectId) => {
+  const handleLike = async (postId: string) => {
     if (!currentUser) return;
 
     try {
-      const postModel = await PostModel.getInstance();
-      const userId = new ObjectId(currentUser.id);
+      const response = await fetch(`/api/posts/${postId}/like`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-      // Check if already liked
-      const post = posts.find((p) => p._id?.equals(postId));
-      const isLiked = post?.likes.some((like) => like.equals(userId));
-
-      if (isLiked) {
-        await postModel.unlikePost(postId, userId);
-      } else {
-        await postModel.likePost(postId, userId);
+      if (!response.ok) {
+        throw new Error("Failed to like post");
       }
+
+      const result = await response.json();
 
       // Update local state
       setPosts(
         posts.map((post) => {
-          if (post._id?.equals(postId)) {
-            const newLikes = isLiked
-              ? post.likes.filter((like) => !like.equals(userId))
-              : [...post.likes, userId];
-
-            return { ...post, likes: newLikes };
+          if (post._id === postId) {
+            return {
+              ...post,
+              likes: result.likes,
+              isLiked: result.isLiked,
+            };
           }
           return post;
         }),
@@ -99,31 +102,31 @@ export default function HomePage() {
     }
   };
 
-  const handleAddComment = async (postId: ObjectId, text: string) => {
+  const handleAddComment = async (postId: string, text: string) => {
     if (!currentUser || !text.trim()) return;
 
     try {
-      const postModel = await PostModel.getInstance();
-      const userId = new ObjectId(currentUser.id);
-
-      await postModel.addComment(postId, {
-        userId,
-        text: text.trim(),
+      const response = await fetch(`/api/posts/${postId}/comment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: text.trim() }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to add comment");
+      }
+
+      const result = await response.json();
 
       // Update local state
       setPosts(
         posts.map((post) => {
-          if (post._id?.equals(postId)) {
-            const newComment = {
-              userId,
-              text: text.trim(),
-              createdAt: new Date(),
-            };
-
+          if (post._id === postId) {
             return {
               ...post,
-              comments: [...post.comments, newComment],
+              comments: result.comments,
             };
           }
           return post;
@@ -170,7 +173,7 @@ export default function HomePage() {
         <div className="space-y-6">
           {posts.map((post) => (
             <PostCard
-              key={post._id?.toString()}
+              key={post._id}
               post={post}
               currentUserId={currentUser?.id}
               onLike={handleLike}
@@ -184,14 +187,10 @@ export default function HomePage() {
 }
 
 interface PostCardProps {
-  post: Post & {
-    artist?: User | null;
-    artwork?: Artwork | null;
-    artform?: Artform | null;
-  };
+  post: Post;
   currentUserId?: string;
-  onLike: (postId: ObjectId) => void;
-  onAddComment: (postId: ObjectId, text: string) => void;
+  onLike: (postId: string) => void;
+  onAddComment: (postId: string, text: string) => void;
 }
 
 function PostCard({
@@ -202,24 +201,15 @@ function PostCard({
 }: PostCardProps) {
   const [commentText, setCommentText] = useState("");
   const [showAllComments, setShowAllComments] = useState(false);
-  const [isLiked, setIsLiked] = useState(
-    currentUserId
-      ? post.likes.some((like) => like.toString() === currentUserId)
-      : false,
-  );
+  const isLiked = currentUserId ? post.likes.includes(currentUserId) : false;
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!post._id) return;
-
     onAddComment(post._id, commentText);
     setCommentText("");
   };
 
   const handleLikeClick = () => {
-    if (!post._id) return;
-
-    setIsLiked(!isLiked);
     onLike(post._id);
   };
 
@@ -249,13 +239,13 @@ function PostCard({
           </div>
           <div>
             <Link
-              href={`/artists/${post.artist?._id}`}
+              href={`/artists/${post.artist?.id}`}
               className="font-medium hover:underline"
             >
               {post.artist?.name || "Unknown Artist"}
             </Link>
             <p className="text-xs text-muted-foreground">
-              {post.artform?.name} • {post.artform?.state}
+              {post.artwork?.title}
             </p>
           </div>
         </div>
@@ -359,7 +349,7 @@ function PostCard({
               <div key={index} className="mb-1">
                 <p className="text-sm">
                   <span className="font-medium">
-                    User{comment.userId.toString().slice(-4)}
+                    User{comment.userId.slice(-4)}
                   </span>{" "}
                   {comment.text}
                 </p>
