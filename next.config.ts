@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
       "encrypted-tbn0.gstatic.com",
       "www.indianvillez.com",
       "cdn.shopify.com", // www.indianvillez.com uses Shopify CDN
+      "images.unsplash.com",
     ],
     // For newer Next.js versions, use remotePatterns instead:
     remotePatterns: [
