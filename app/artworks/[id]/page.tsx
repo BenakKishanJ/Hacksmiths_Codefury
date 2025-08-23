@@ -106,16 +106,21 @@ export default function ArtworkDetailPage() {
     <div className="max-w-4xl mx-auto p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Artwork Image */}
-        <div className="aspect-square relative">
-          <Image
-            src={artwork.finalImageUrl}
-            alt={artwork.title}
-            fill
-            className="object-cover rounded-lg"
-            priority
-          />
-        </div>
-
+        {artwork && artwork.finalImageUrl && (
+          <div className="aspect-square relative">
+            <Image
+              src={artwork.finalImageUrl}
+              alt={
+                artwork.title ||
+                `Artwork by ${artwork.artist?.name || "Unknown Artist"}`
+              }
+              fill
+              className="object-cover rounded-lg"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority
+            />
+          </div>
+        )}
         {/* Artwork Details */}
         <div className="space-y-6">
           <div>
@@ -179,7 +184,7 @@ export default function ArtworkDetailPage() {
           <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
             <h3 className="font-medium mb-2">Pricing</h3>
             <p className="text-2xl font-bold text-green-600">
-              ₹{artwork.price.toLocaleString()}
+              ₹{(artwork.price ?? 0).toLocaleString()}
             </p>
             {artwork.forSale && (
               <p className="text-sm text-green-600 mt-1">
