@@ -5,8 +5,9 @@ import React from "react";
 import { AppSidebar } from "@/components/Sidebar";
 import { cn } from "@/lib/utils";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { usePathname, useRouter } from "next/navigation";
-import { useAuth, SignInButton } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
+// import { usePathname, useRouter } from "next/navigation";
+// import { useAuth } from "@clerk/nextjs";
 
 export default function ArtistsLayout({
   children,
@@ -15,8 +16,8 @@ export default function ArtistsLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const pathname = usePathname();
-  const { isLoaded, userId } = useAuth();
-  const router = useRouter();
+  // const { isLoaded, userId } = useAuth();
+  // const router = useRouter();
 
   // Check if the current path is in the auth route group
   const isAuthPage =
@@ -39,7 +40,7 @@ export default function ArtistsLayout({
             ? "md:ml-[300px]"
             : showSidebar
               ? "md:ml-[60px]"
-              : "ml-0"
+              : "ml-0",
         )}
       >
         <div className="p-6">{children}</div>
